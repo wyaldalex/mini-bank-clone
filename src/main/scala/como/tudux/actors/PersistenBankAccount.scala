@@ -16,10 +16,15 @@ class PersistenBankAccount {
   //events = to persist to the db
   sealed  trait Event
   case class BankAccountCreated(bankAccount: BankAccount) extends Event
+  case class BalanceUpdated(amount: Double) extends Event
 
   //state
   case class BankAccount(id: String, user: String, currency: String, balance: Double)
   //responses
   sealed trait Response
+  case class BankAccountCreatedResponse(id: String) extends Response
+  case class BankAccountBalanceUpdatedResponse(maybeBankAccount: Option[BankAccount]) extends Response
+  case class GetBankAccountResponse(maybeBankAccount: Option[BankAccount]) extends Response
+
 
 }
