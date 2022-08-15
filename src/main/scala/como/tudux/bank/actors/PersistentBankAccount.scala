@@ -7,7 +7,7 @@ import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
 //a single bank account
 //bottom of the category, meaning some child actor
 //Event sourcing for: fault tolerance and auditing
-class PersistenBankAccount {
+class PersistentBankAccount {
 
   //commands = messages
   sealed trait Command
