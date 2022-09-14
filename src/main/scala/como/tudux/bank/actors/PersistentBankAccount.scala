@@ -34,7 +34,7 @@ class PersistentBankAccount {
 
   val commandHandler: (BankAccount,Command) => Effect[Event, BankAccount] = (state, command) =>
     command match {
-      case CreateBankAccount(user, currency, initialBalance, replyTo) =>
+      case CreateBankAccount(user, currency, initialBalance, bank) =>
         val id = state.id
         /*
           -bank creates me
@@ -45,19 +45,19 @@ class PersistentBankAccount {
           -(the bank surfaces the response to the HTTP server)
          */
         Effect
-           .persist(BankAccountCreated(BankAccount(id , user , currency , initialBalance)))
-           .thenReply(replyTo)(_ => BankAccountCreatedResponse(id))
-      case UpdateBalance(_, _, amount, replyTo) =>
+           .persist(BankAccountCreated(BankAccount(id , user , currency , initialBalance))) //represents persisting into cassandra
+           .thenReply(bank)(_ => BankAccountCreatedResponse(id))
+      case UpdateBalance(_, _, amount, bank) =>
         val newBalance = state.balance + amount
         //check here for withdrawal
         if(newBalance < 0) //illegal
-          Effect.reply(replyTo)(BankAccountBalanceUpdatedResponse(None))
+          Effect.reply(bank)(BankAccountBalanceUpdatedResponse(None))
         else
           Effect
             .persist(BalanceUpdated(amount))
-            .thenReply(replyTo)(newState => BankAccountBalanceUpdatedResponse(Some(newState)))
-      case GetBankAccount(_, replyTo) =>
-        Effect.reply(replyTo)(GetBankAccountResponse(Some(state)))
+            .thenReply(bank)(newState => BankAccountBalanceUpdatedResponse(Some(newState)))
+      case GetBankAccount(_, bank) =>
+        Effect.reply(bank)(GetBankAccountResponse(Some(state)))
     }
 
   val eventHandler: (BankAccount, Event) => BankAccount = (state,event) =>
@@ -72,8 +72,8 @@ class PersistentBankAccount {
     EventSourcedBehavior[Command, Event, BankAccount] (
       persistenceId = PersistenceId.ofUniqueId(id),
       emptyState = BankAccount(id,"","",0.0),
-      commandHandler = ,
-      eventHandler =
+      commandHandler = commandHandler,
+      eventHandler = eventHandler
 
 
     )
