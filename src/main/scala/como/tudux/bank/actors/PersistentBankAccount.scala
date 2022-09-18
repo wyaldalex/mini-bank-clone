@@ -7,14 +7,16 @@ import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
 //a single bank account
 //bottom of the category, meaning some child actor
 //Event sourcing for: fault tolerance and auditing
-class PersistentBankAccount {
+object PersistentBankAccount {
 
   //commands = messages
   sealed trait Command
-  //WARNING the use of Doubles is discouraged for real apps as Double is not reliable
-  case class CreateBankAccount(user: String, currency: String, initialBalance: Double, replyTo: ActorRef[Response]) extends Command
-  case class UpdateBalance(id: String,currency: String,amount: Double,replyTo: ActorRef[Response]) extends Command
-  case class GetBankAccount(id: String, replyTo: ActorRef[Response]) extends Command
+  object Command {
+    case class CreateBankAccount(user: String, currency: String, initialBalance: Double, replyTo: ActorRef[Response]) extends Command   //WARNING the use of Doubles is discouraged for real apps as Double is not reliable
+    case class UpdateBalance(id: String,currency: String,amount: Double,replyTo: ActorRef[Response]) extends Command
+    case class GetBankAccount(id: String, replyTo: ActorRef[Response]) extends Command
+  }
+
   //events = to persist to the db
   sealed  trait Event
   case class BankAccountCreated(bankAccount: BankAccount) extends Event
@@ -31,6 +33,8 @@ class PersistentBankAccount {
   //Defining a persistent actor
   //command handler = message handler => persist an event
   //state
+
+  import Command._
 
   val commandHandler: (BankAccount,Command) => Effect[Event, BankAccount] = (state, command) =>
     command match {
