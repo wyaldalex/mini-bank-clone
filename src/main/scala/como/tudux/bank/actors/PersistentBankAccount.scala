@@ -78,8 +78,6 @@ object PersistentBankAccount {
       emptyState = BankAccount(id,"","",0.0),
       commandHandler = commandHandler,
       eventHandler = eventHandler
-
-
     )
 
 
