@@ -26,15 +26,19 @@ object PersistentBankAccount {
   case class BankAccount(id: String, user: String, currency: String, balance: Double)
   //responses
   sealed trait Response
-  case class BankAccountCreatedResponse(id: String) extends Response
-  case class BankAccountBalanceUpdatedResponse(maybeBankAccount: Option[BankAccount]) extends Response
-  case class GetBankAccountResponse(maybeBankAccount: Option[BankAccount]) extends Response
+  object Response {
+    case class BankAccountCreatedResponse(id: String) extends Response
+    case class BankAccountBalanceUpdatedResponse(maybeBankAccount: Option[BankAccount]) extends Response
+    case class GetBankAccountResponse(maybeBankAccount: Option[BankAccount]) extends Response
+  }
+
 
   //Defining a persistent actor
   //command handler = message handler => persist an event
   //state
 
   import Command._
+  import Response._
 
   val commandHandler: (BankAccount,Command) => Effect[Event, BankAccount] = (state, command) =>
     command match {
