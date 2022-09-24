@@ -27,7 +27,7 @@ case class BankAccountUpdateRequest(currency: String, amount: Double) {
 
 case class FailureResponse(reason: String)
 
-class BankRoutes(bank: ActorRef[Command])(implicit system: ActorSystem[_]) {
+class BankRouter(bank: ActorRef[Command])(implicit system: ActorSystem[_]) {
   implicit val timeout: Timeout = Timeout(5.seconds)
 
   def createBankAccount(request: BankAccountCreationRequest) : Future[Response] = {

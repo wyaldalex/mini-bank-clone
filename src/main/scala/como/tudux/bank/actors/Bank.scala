@@ -8,6 +8,9 @@ import akka.persistence.typed.scaladsl.{Effect, EventSourcedBehavior}
 import akka.util.Timeout
 import como.tudux.bank.actors
 
+//Cassandra Queries:
+//select * from akka.messages;
+
 import java.util.UUID
 import scala.concurrent.ExecutionContext
 
@@ -87,7 +90,7 @@ object Bank {
   }
 }
 
-
+/*
 object BankPlayGround extends App {
   import PersistentBankAccount.Command._
   import PersistentBankAccount.Response._
@@ -139,5 +142,5 @@ object BankPlayGround extends App {
 
 }
 
-
+*/
 
