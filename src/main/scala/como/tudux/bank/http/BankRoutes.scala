@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.headers.Location
 import akka.util.Timeout
 import como.tudux.bank.actors.PersistentBankAccount.{Command, Response}
 import como.tudux.bank.actors.PersistentBankAccount.Command._
-import como.tudux.bank.actors.PersistentBankAccount.Response.{BankAccountCreatedResponse, GetBankAccountResponse}
+import como.tudux.bank.actors.PersistentBankAccount.Response.{BankAccountBalanceUpdatedResponse, BankAccountCreatedResponse, GetBankAccountResponse}
 import io.circe.generic.auto._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
@@ -19,6 +19,10 @@ import scala.concurrent.duration.DurationInt
 
 case class BankAccountCreationRequest(user: String, currency: String, balance: Double) {
   def toCommand(replyTo: ActorRef[Response]) : Command = CreateBankAccount(user, currency,balance, replyTo)
+}
+
+case class BankAccountUpdateRequest(currency: String, amount: Double) {
+  def toCommand(id: String, replyTo: ActorRef[Response]): Command = UpdateBalance(id, currency, amount, replyTo)
 }
 
 case class FailureResponse(reason: String)
@@ -33,6 +37,9 @@ class BankRoutes(bank: ActorRef[Command])(implicit system: ActorSystem[_]) {
 
   def getBankAccount(id: String) : Future[Response] =
     bank.ask(replyTo => GetBankAccount(id, replyTo))
+
+  def updateBankAccount(id: String, request: BankAccountUpdateRequest): Future[Response] =
+    bank.ask(replyTo => request.toCommand(id, replyTo))
   /*
   POST /bank/
        Payload: bank account request creation as JSON
@@ -68,17 +75,36 @@ class BankRoutes(bank: ActorRef[Command])(implicit system: ActorSystem[_]) {
         }
       } ~
       path(Segment) { id =>
-        /*
-        - send command to the bank
-        - expect reply
-        */
-        onSuccess(getBankAccount(id)) {
-          case GetBankAccountResponse(Some(account)) =>
-            complete(account)
-          case GetBankAccountResponse(None) =>
-            complete(StatusCodes.NotFound, FailureResponse(s"Bank account $id cannot be found"))
+        get {/*
+            - send command to the bank
+            - expect reply
+            */
+          onSuccess(getBankAccount(id)) {
+            case GetBankAccountResponse(Some(account)) =>
+              complete(account)
+            case GetBankAccountResponse(None) =>
+              complete(StatusCodes.NotFound, FailureResponse(s"Bank account $id cannot be found"))
+
+          }
+        } ~
+        put {
+          entity(as[BankAccountUpdateRequest]) { request =>
+            /*
+            - transform the request to a Command
+            - send the command to the bank
+            - expect a reply
+             */
+            onSuccess(updateBankAccount(id,request)) {
+              case BankAccountBalanceUpdatedResponse(Some(account)) =>
+                complete(account)
+              case  BankAccountBalanceUpdatedResponse(None) =>
+                complete(StatusCodes.NotFound, FailureResponse(s"Bank account $id cannot be found/updated"))
+            }
+
+          }
 
         }
+
       }
     }
 }
